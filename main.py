@@ -1,14 +1,11 @@
-from fastapi import FastAPI,Path 
+from fastapi import FastAPI,Path  # type: ignore
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel # type: ignore
 from urllib.parse import urlparse
 import json
 
 app = FastAPI()
-
-
 inventory = []
-
 
 class Product(BaseModel):
     id : int
@@ -159,9 +156,6 @@ def update_product():
             else:
                 print("\nRESPONSE: Invalid Product name")
     save_inventory()
-            
-
-
 
 def get_by_name():
     global inventory
@@ -240,7 +234,6 @@ def exit_program():
     save_inventory()
     return False
 
-
 def pretty_print(l):
     global inventory
     for i in range(len(l)):
@@ -280,7 +273,6 @@ def display_menu():
 def home():
     global inventory
     return inventory
-
 
 
 main()
