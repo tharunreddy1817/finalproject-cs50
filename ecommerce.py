@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import BaseModel # type: ignore
 from urllib.parse import urlparse
 import json
+import sys
 
 app = FastAPI()
 inventory = []
@@ -44,8 +45,7 @@ def main():
             case "6":
                 clear_cart()
             case "7":
-                exit = exit_program()
-                print("\nRESPONSE: Exiting the program. Thank you!\n")
+                exit_program()
             case _:
                 print("\nRESPONSE: Invalid menu selection.\nPlease try again.\n")
         print_separator()
@@ -59,12 +59,16 @@ def add_product():
     print(f"Product {p_id}:")
     l = input("Enter the link of the product            : ")
     n=  input("Enter name of the product (Optional)     : ")
-    p = "$"+ input("Enter the price of the product (Optional): ")
+    c = "$"
+    curr = input("Enter the currency sign (Optional, default is $): ")
+    if curr:
+        c = curr
+    p = c + input("Enter the price of the product (Optional): ")
     b = input("Enter the brand of the product (Optional): ")
     s = get_source(l)
     product = Product(id = p_id, link = l, name = n, price = p, brand = b, source = s)
     inventory.append(product)
-    print("\n RESPONSE: Product added successfully.")
+    print("\nRESPONSE: Product added successfully.")
     print_line()
     print("--- Updated Cart: ")
     pretty_print(inventory)
@@ -77,12 +81,12 @@ def update_product():
         return
     print_separator()
     print("### Updating a product in the cart:")
-    print("Enter '7' to exit")
+    print("Enter '7' to return to the main menu")
     print()
 
     op = input("1.Choose product by viewing cart\n2.Choose product by name\nEnter your choice: ")
     if op.strip() == "7":
-        exit_program()
+        main()
         return
     match op.strip():
         case "1":
@@ -106,7 +110,11 @@ def update_product():
                     print("Enter new details for the product (leave blank to keep current value):")
                     l = input("Enter the link of the product            : ")
                     n=  input("Enter name of the product (Optional)     : ")
-                    p = "$" + input("Enter the price of the product (Optional): ")
+                    c = "$"
+                    curr = input("Enter the currency sign (Optional, default is $): ")
+                    if curr:
+                        c = curr
+                    p = c + input("Enter the price of the product (Optional): ")
                     b = input("Enter the brand of the product (Optional): ")
                     new_l = l if l else inventory[i].link
                     new_n = n if n else inventory[i].name
@@ -125,11 +133,11 @@ def update_product():
             while True:
                 print("+++ Available products:")
                 pretty_print(inventory)
-                print("Enter '7' to exit")
+                print("Enter '7' to return to the main menu")
                 print()
                 n = get_name()
                 if n == "7":
-                    exit_program()
+                    main()
                     return
                 elif not n:
                     print("RESPONSE: Product name cannot be empty. Please try again.")
@@ -141,10 +149,16 @@ def update_product():
                 if inventory[i].name == n:
                     print("Enter new details for the product (leave blank to keep current value):")
                     l = input("Enter the link of the product  : ")
-                    p = "$" + input("Enter the price of the product : ")
+                    n = input("Enter name of the product (Optional) : ")
+                    c = "$"
+                    curr = input("Enter the currency sign (Optional, default is $): ")
+                    if curr:
+                        c = curr
+                    p = input("Enter the price of the product (Optional): ")
                     b = input("Enter the brand of the product : ")
                     new_l = l if l else inventory[i].link
-                    new_p = p if p else inventory[i].price  
+                    new_n = n if n else inventory[i].name
+                    new_p = c+ p  if p else inventory[i].price  
                     new_b = b if b else inventory[i].brand
                     s = get_source(new_l)
                     inventory[i] = Product(id = inventory[i].id, link = new_l , name = n, price = new_p, brand = new_b, source = s)
@@ -164,13 +178,13 @@ def get_by_name():
         return
     print_separator()
     print("### Getting product by name:")
-    print("Enter '7' to exit")
+    print("Enter '7' to return to the main menu")
     print()
     b = True
     while(b):
         n = get_name()
         if n == "7":
-            exit_program()
+            main()
             return
         for i in range(len(inventory)):
             if inventory[i].name == n:
@@ -194,11 +208,11 @@ def delete_product():
         return
     print_separator()
     print("### Deleting a product from the cart:")
-    print("Enter '7' to exit")
+    print("Enter '7' to return to the main menu")
     print()
     op = input("1.Choose product by viewing cart\n2.Choose product by name\nEnter your choice: ")
     if op.strip() == "7":
-        exit_program()
+        main()
         return
     match op.strip():
         case "1":
@@ -206,33 +220,54 @@ def delete_product():
             p_id = int(input("Enter the id of the product to delete: "))
             for i in range(len(inventory)):
                 if inventory[i].id == p_id:
-                    del inventory[i]
-                    print("\nRESPONSE: Product deleted successfully.")
-                    break
-            else:
-                print("\nRESPONSE: Invalid Product ID")
+                    if not confirmation():
+                        print("\nRESPONSE: Product deletion cancelled.")
+                        return
+                    else:
+                        del inventory[i]
+                        print("\nRESPONSE: Product deleted successfully.")
+                        return
+                    
+            print("\nRESPONSE: Invalid Product ID")
         case "2":
             n = get_name()
             for i in range(len(inventory)):
-                if inventory[i].name == n:
+                if not confirmation():
+                    print("\nRESPONSE: Product deletion cancelled.")
+                    return
+                else:
                     del inventory[i]
                     print("\nRESPONSE: Product deleted successfully.")
-                    break
-            else:
-                print("\nRESPONSE: Invalid Product name")
+                    return
+            print("\nRESPONSE: Invalid Product name")
     save_inventory()
+
+
 
 def clear_cart():
     global inventory
-    inventory.clear()
-    save_inventory()
-    print_separator()
-    print("\nRESPONSE: Cart cleared successfully.")
+    if len(inventory) == 0:
+        print("\nRESPONSE: No items in Cart")
+        return
+    if confirmation():
+        inventory.clear()
+        save_inventory()
+        print_separator()
+        print("\nRESPONSE: Cart cleared successfully.")
+    else:
+        print("\nRESPONSE: Cart clearing cancelled.")
 
 def exit_program():
     global inventory
-    save_inventory()
-    return False
+    if confirmation():
+        print("\nRESPONSE: Exiting the program. Thank you!")
+        print_separator()
+        save_inventory()
+        sys.exit(0)
+    else:
+        print("\nRESPONSE: Exit cancelled.")
+        print_separator()
+       
 
 def pretty_print(l):
     global inventory
@@ -245,15 +280,19 @@ def pretty_print(l):
             print(f"\t{k} : {v},")
         print_line()
 
+def confirmation():
+    while True:
+        choice = input("Are you sure you want to delete this product? (y/n): ").strip().lower()
+        if choice in ["y", "n"]:
+            return choice == "y"
 def get_name():
-    global inventory
     n = input("Enter name of the Product : ").strip()
     return n
 
 def save_inventory():
     global inventory
     with open("data.json", "w") as f:
-        json.dump([product.model_dump() for product in inventory], f)
+        json.dump([product.model_dump()  for product in inventory], f, indent = 4)
 
 def print_line():
     print("=============================================================================================")
@@ -269,10 +308,10 @@ def get_source(l: str):
 def display_menu():
     return "1.Add Product to the Cart\n2.Update Product details\n3.Get Product by Name\n4.Get all Products in the Cart\n5.Delete Product\n6.Clear cart\n7.Exit\n\nEnter your choice: "
 
-@app.get("/create-product")
+@app.get("")
 def home():
     global inventory
-    return inventory
+    return {"message": "Welcome to the E-commerce Cart Management System!"}
 
 
 main()
