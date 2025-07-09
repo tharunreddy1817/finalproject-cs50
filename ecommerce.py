@@ -1,6 +1,6 @@
-from fastapi import FastAPI,Path  # type: ignore
+from fastapi import FastAPI
 from typing import Optional
-from pydantic import BaseModel # type: ignore
+from pydantic import BaseModel 
 from urllib.parse import urlparse
 import json
 import sys
@@ -220,7 +220,7 @@ def delete_product():
             p_id = int(input("Enter the id of the product to delete: "))
             for i in range(len(inventory)):
                 if inventory[i].id == p_id:
-                    if not confirmation():
+                    if not del_confirmation():
                         print("\nRESPONSE: Product deletion cancelled.")
                         return
                     else:
@@ -230,17 +230,25 @@ def delete_product():
                     
             print("\nRESPONSE: Invalid Product ID")
         case "2":
+            print("+++ Available products:")
+            pretty_print(inventory)
             n = get_name()
+            if not n:
+                print("\nRESPONSE: Product name cannot be empty. Please try again.")
+                return
             for i in range(len(inventory)):
-                if not confirmation():
-                    print("\nRESPONSE: Product deletion cancelled.")
-                    return
-                else:
-                    del inventory[i]
-                    print("\nRESPONSE: Product deleted successfully.")
-                    return
-            print("\nRESPONSE: Invalid Product name")
-    save_inventory()
+                if inventory[i].name == n:
+                    if not del_confirmation():
+                        print("\nRESPONSE: Product deletion cancelled.")
+                        return
+                    else:
+                        del inventory[i]
+                        print("\nRESPONSE: Product deleted successfully.")
+                        print("--- Updated Cart: ")
+                        pretty_print(inventory)
+                        save_inventory()
+                        return
+            print("\nRESPONSE: Invalid Product Name")
 
 
 
@@ -249,7 +257,13 @@ def clear_cart():
     if len(inventory) == 0:
         print("\nRESPONSE: No items in Cart")
         return
-    if confirmation():
+    while True:
+        choice = input("Are you sure you want to delete this product? (y/n): ").strip().lower()
+        if choice in ["y", "n"]:
+             b = (choice == "y")
+             break
+
+    if b:
         inventory.clear()
         save_inventory()
         print_separator()
@@ -259,7 +273,7 @@ def clear_cart():
 
 def exit_program():
     global inventory
-    if confirmation():
+    if exit_confirmation():
         print("\nRESPONSE: Exiting the program. Thank you!")
         print_separator()
         save_inventory()
@@ -271,6 +285,10 @@ def exit_program():
 
 def pretty_print(l):
     global inventory
+    if len(l) == 0:
+        print("\nRESPONSE: No items in Cart")
+        print_separator()
+        return
     for i in range(len(l)):
         print(f"Product {i+1} :")
         print_line()
@@ -280,9 +298,14 @@ def pretty_print(l):
             print(f"\t{k} : {v},")
         print_line()
 
-def confirmation():
+def del_confirmation():
     while True:
         choice = input("Are you sure you want to delete this product? (y/n): ").strip().lower()
+        if choice in ["y", "n"]:
+            return choice == "y"
+def exit_confirmation():
+    while True:
+        choice = input("Are you sure you want to exit? (y/n): ").strip().lower()
         if choice in ["y", "n"]:
             return choice == "y"
 def get_name():
@@ -291,6 +314,8 @@ def get_name():
 
 def save_inventory():
     global inventory
+    for i in range(len(inventory)):
+        inventory[i].id = i + 1  
     with open("data.json", "w") as f:
         json.dump([product.model_dump()  for product in inventory], f, indent = 4)
 
@@ -313,5 +338,5 @@ def home():
     global inventory
     return {"message": "Welcome to the E-commerce Cart Management System!"}
 
-
-main()
+if __name__ == "__main__":
+    main()
