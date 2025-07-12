@@ -1,11 +1,9 @@
-from fastapi import FastAPI
 from typing import Optional
 from pydantic import BaseModel 
 from urllib.parse import urlparse
 import json
 import sys
 
-app = FastAPI()
 inventory = []
 
 class Product(BaseModel):
@@ -333,10 +331,6 @@ def get_source(l: str):
 def display_menu():
     return "1.Add Product to the Cart\n2.Update Product details\n3.Get Product by Name\n4.Get all Products in the Cart\n5.Delete Product\n6.Clear cart\n7.Exit\n\nEnter your choice: "
 
-@app.get("")
-def home():
-    global inventory
-    return {"message": "Welcome to the E-commerce Cart Management System!"}
 
 if __name__ == "__main__":
     main()
