@@ -1,6 +1,6 @@
 # Personal E-commerce Cart Manager
 
-#### Video Demo: (https://youtu.be/AUri70E1ofo)
+
 
 #### Description:
 
